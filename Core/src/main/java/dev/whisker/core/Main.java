@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Main {
-    public static void main(String[] args) throws RuntimeException {
+    public static void main(String[] args) throws RuntimeException, InterruptedException, IOException {
 
         Path path = Paths.get("E:\\testesCodigos");
 
