@@ -1,0 +1,24 @@
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+
+    container_name: whisker-rabbitmq
+
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+    restart: unless-stopped
+
+  whisker-core:
+
+    build:
+      context: ./Core
+
+    container_name: whisker-core
+
+    depends_on:
+      - rabbitmq
+
+    restart: unless-stopped
