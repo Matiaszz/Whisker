@@ -10,15 +10,3 @@ services:
       - "15672:15672"
 
     restart: unless-stopped
-
-  whisker-core:
-
-    build:
-      context: ./Core
-
-    container_name: whisker-core
-
-    depends_on:
-      - rabbitmq
-
-    restart: unless-stopped
