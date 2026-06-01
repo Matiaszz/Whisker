@@ -34,30 +34,29 @@ public class FileWatcher {
                 }
             }
         });
-
-        this.stop();
     }
 
-
     public void stop() {
-        Thread.currentThread().interrupt();
         running = false;
+        try {
+            watcher.close();
+        } catch (IOException e) {
+            log.error("Error closing watcher", e);
+        }
     }
 
     private void watch() throws IOException, InterruptedException {
-            this.workdir.register(watcher, ENTRY_CREATE);
-            this.workdir.register(watcher, ENTRY_MODIFY);
-            this.workdir.register(watcher, ENTRY_DELETE);
+        this.workdir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
 
-            WatchKey key;
-            while ((key = watcher.take()) != null) {
-                for (WatchEvent<?> event : key.pollEvents()) {
-                    log.info("[WATCHER] Event kind: {}", event.kind());
-                    log.info("[WATCHER] Event file: {}", event.context());
-                }
-                key.reset();
+        WatchKey key;
+        while ((key = watcher.take()) != null) {
+            for (WatchEvent<?> event : key.pollEvents()) {
+                log.info("[WATCHER] Event kind: {}", event.kind());
+                log.info("[WATCHER] Event file: {}", event.context());
+                log.info("[WATCHER] Event count: {}", event.count());
             }
-
+            key.reset();
+        }
     }
 
     public FileWatcher(Path workdir) throws IOException {
