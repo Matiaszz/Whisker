@@ -1,6 +1,5 @@
 package dev.whisker.core;
 
-import dev.whisker.core.monitoring.domain.AnalysisScheduler;
 import dev.whisker.core.monitoring.domain.FileWatcher;
 import org.junit.Test;
 
