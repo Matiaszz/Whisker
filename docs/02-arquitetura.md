@@ -494,14 +494,13 @@ whisker/
 
 ├── docs/
 │
-├── whisker-core/
+├── Core/
 │
-├── whisker-cli/
+├── CLI/
 │
-├── whisker-desktop/
+├── Desktop/
 │
-├── docker/
-│   └── rabbitmq/
+├── docker-compose.yaml
 │
 └── scripts/
 ```

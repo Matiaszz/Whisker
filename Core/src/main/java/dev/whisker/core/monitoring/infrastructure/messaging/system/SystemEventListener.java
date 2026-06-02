@@ -1,15 +1,11 @@
-package dev.whisker.core.monitoring.infrastructure.messaging;
+package dev.whisker.core.monitoring.infrastructure.messaging.system;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.whisker.core.monitoring.domain.FileWatcher;
-import dev.whisker.core.shared.domain.system.SystemEvent;
 import dev.whisker.core.shared.domain.system.payloads.StartPayload;
 import dev.whisker.core.shared.infrastructure.messaging.BaseWhiskerEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -21,7 +17,6 @@ import java.nio.file.Path;
 public class SystemEventListener {
 
     private final FileWatcher fileWatcher;
-    private final ObjectMapper objectMapper;
 
     @RabbitListener(queues = "system.start.queue")
     public void handleSystemStart(String json) throws IOException {

@@ -7,7 +7,7 @@ public enum SystemEvent implements EventType {
 
     @Override
     public String getModel() {
-        return "analysis";
+        return "system";
     }
 
     @Override
