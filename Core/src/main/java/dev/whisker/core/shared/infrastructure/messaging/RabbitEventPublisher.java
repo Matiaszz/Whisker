@@ -12,7 +12,7 @@ public class RabbitEventPublisher {
 
     private final RabbitTemplate rabbitTemplate;
 
-    public void publish(String exchange, String routingKey, BaseWhiskerEvent event) {
+    public void publish(String exchange, String routingKey, BaseWhiskerEvent<?> event) {
         try {
             log.info("[MESSAGING] Publishing event: {}", event.eventType());
             rabbitTemplate.convertAndSend(exchange, routingKey, event);

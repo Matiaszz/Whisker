@@ -21,13 +21,14 @@ import java.util.concurrent.Callable;
 public class Main implements Callable<Integer> {
 
     public static void main(String[] args) {
+        System.setProperty("logback.statusListenerClass", "ch.qos.logback.core.status.NopStatusListener");
         int exitCode = new CommandLine(new Main()).execute(args);
         System.exit(exitCode);
     }
 
     @Override
     public Integer call() {
-        System.out.println(Ansi.AUTO.string("@|bold,cyan " + getBanner() + "|@"));
+        System.out.println(Ansi.ON.string("@|bold,yellow " + getBanner() + "|@"));
         CommandLine.usage(this, System.out);
         return 0;
     }
@@ -42,8 +43,9 @@ public class Main implements Callable<Integer> {
         public Integer call() throws Exception {
             String currentPath = Paths.get(".").toAbsolutePath().normalize().toString();
             
-            System.out.println(Ansi.AUTO.string("@|yellow 🐱 Whisker is waking up...|@"));
-            System.out.println(Ansi.AUTO.string("@|blue Path:|@ " + currentPath));
+            System.out.println(Ansi.ON.string("@|yellow " + getWakingCat() + "|@"));
+            System.out.println(Ansi.ON.string("@|yellow 🐱 Whisker is waking up...|@"));
+            System.out.println(Ansi.ON.string("@|blue Path:|@ " + currentPath));
 
             WhiskerEvent event = WhiskerEvent.builder()
                     .eventType("system.start")
@@ -53,10 +55,13 @@ public class Main implements Callable<Integer> {
 
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(new JavaTimeModule());
-            String jsonEvent = mapper.writeValueAsString(event);
+            String jsonEvent = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(event);
 
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost("localhost"); // Em um cenário real, isso poderia ser configurável
+            
+            // Tenta desativar logs do SLF4J se possível ou apenas prossegue
+            java.util.logging.Logger.getLogger("com.rabbitmq.client").setLevel(java.util.logging.Level.OFF);
 
             try (Connection connection = factory.newConnection();
                  Channel channel = connection.createChannel()) {
@@ -65,24 +70,38 @@ public class Main implements Callable<Integer> {
 
                 channel.basicPublish(EXCHANGE_NAME, ROUTING_KEY, null, jsonEvent.getBytes(StandardCharsets.UTF_8));
                 
-                System.out.println(Ansi.AUTO.string("@|bold,green ✅ Event sent to RabbitMQ!|@"));
-                System.out.println(Ansi.AUTO.string("@|faint " + jsonEvent + "|@"));
+                System.out.println(Ansi.ON.string("@|bold,green ✅ Whisker is ready!|@"));
+                System.out.println(Ansi.ON.string("@|faint " + jsonEvent + "|@"));
             } catch (Exception e) {
-                System.err.println(Ansi.AUTO.string("@|bold,red ❌ Error connecting to RabbitMQ:|@ " + e.getMessage()));
+                System.err.println(Ansi.ON.string("@|bold,red ❌ Error connecting to RabbitMQ:|@ " + e.getMessage()));
                 return 1;
             }
 
             return 0;
         }
+
+        private static String getWakingCat() {
+            return """
+                    (:`--..___...-''``-._             |`._
+                      ```--...--.      . `-..__      .`/ _\\ \s
+                                `\\     '       ```--`.    />
+                                : :   :               `:`-'
+                                 `.:.  `.._--...___     ``--...__     \s
+                                    ``--..,)       ```----....__,)
+                """;
+        }
     }
 
     private static String getBanner() {
         return """
-                 _     _ _     _             \s
-                | |   | | |__ (_)___| | _____ _ __\s
-                | | _ | | '_ \\| / __| |/ / _ \\ '__|
-                | |/ \\| | | | | \\__ \\   <  __/ |  \s
-                |__/ \\__/|_| |_|_|___/_|\\_\\___|_|  \s
-                """;
+                   __..--''``---....___   _..._    __
+         /// //_.-'    .-/";  `        ``<._  ``.''_ `. / // /
+        ///_.-' _..--.'_    \\\\                  `( ) ) // //
+        / (_..-' // (<  _   ;_..__               ; `' / ///
+         / // // / / `-._,_)' // / ``--...____..-' /// / //
+        
+                          W H I S K E R
+                      Code Analysis Platform
+             \s""";
     }
 }

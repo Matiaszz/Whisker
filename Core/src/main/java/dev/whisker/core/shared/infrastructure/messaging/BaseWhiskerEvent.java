@@ -22,8 +22,6 @@ public record BaseWhiskerEvent<T>(
         return MAPPER.writeValueAsString(this);
     }
 
-    //cu
-
     public static <T> BaseWhiskerEvent<T> fromJson(
             String json,
             Class<T> payloadType
