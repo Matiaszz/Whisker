@@ -35,7 +35,7 @@ build/
 ### IDEs ###
 .vscode/
 .idea
-./bin/
+bin/
 
 ### Mac OS ###
 .DS_Store
