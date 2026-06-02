@@ -1,23 +1,13 @@
 package dev.whisker.core;
 
-import dev.whisker.core.monitoring.domain.AnalysisScheduler;
-import dev.whisker.core.monitoring.domain.FileWatcher;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
+@SpringBootApplication
+@EnableScheduling
 public class Main {
-    public static void main(String[] args) throws RuntimeException, InterruptedException, IOException {
-
-        Path path = Paths.get("E:\\testesCodigos");
-
-        FileWatcher watcher = new FileWatcher(path);
-        AnalysisScheduler scheduler = new AnalysisScheduler();
-
-        watcher.start();
-        scheduler.start();
-
-        Thread.currentThread().join();
+    public static void main(String[] args) {
+        SpringApplication.run(Main.class, args);
     }
 }
