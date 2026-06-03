@@ -23,13 +23,8 @@ public class SystemEventListener {
     private final PropertySourceResolver propertySourceResolver;
 
     @RabbitListener(queues = "system.start.queue")
-    public void handleSystemStart(String json) throws IOException {
-        log.info("📩 [LISTENER] Message received from system.start.queue: {}", json);
-        BaseWhiskerEvent<StartPayload> event =
-            BaseWhiskerEvent.fromJson(
-                    json,
-                    StartPayload.class
-            );
+    public void handleSystemStart(BaseWhiskerEvent<StartPayload> event) throws IOException {
+        log.info("📩 [LISTENER] Message received from system.start.queue: {}", event.eventId());
 
         try {
             String rawSource = event.source().trim();
@@ -56,13 +51,8 @@ public class SystemEventListener {
     }
 
     @RabbitListener(queues = "system.stop.queue")
-    public void handleSystemStop(String json) throws JsonProcessingException {
-        log.info("📩 [LISTENER] Message received from system.stop.queue: {}", json);
-        BaseWhiskerEvent<?> event =
-                BaseWhiskerEvent.fromJson(
-                        json,
-                        Void.class
-                );
+    public void handleSystemStop(BaseWhiskerEvent<StartPayload> event) throws JsonProcessingException {
+        log.info("📩 [LISTENER] Message received from system.stop.queue: {}", event.eventId());
 
         try {
             Source source = propertySourceResolver.resolve(event.source());

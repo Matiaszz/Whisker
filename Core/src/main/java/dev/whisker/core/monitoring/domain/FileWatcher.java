@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,16 +29,15 @@ public class FileWatcher {
     private final FileSystemAdapter fileSystemAdapter;
 
     public void start(Path workdir) throws IOException {
-
         if (running) {
             log.warn("[WATCHER] Already running");
             return;
         }
 
         this.workdir = workdir.toAbsolutePath();
-
-        this.watcher = FileSystems.getDefault().newWatchService();
         fileSystemAdapter.setup(this.workdir);
+
+        this.watcher = fileSystemAdapter.getWatcher();
 
         running = true;
 
@@ -49,7 +49,7 @@ public class FileWatcher {
                     watchEvents();
                 } catch (Exception e) {
                     if (running) {
-                        log.error("[WATCHER] Failure", e);
+                        log.error("[WATCHER] Failure", e.getCause());
                     }
                 }
             }
