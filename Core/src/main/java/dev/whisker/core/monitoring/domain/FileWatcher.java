@@ -1,87 +1,31 @@
 package dev.whisker.core.monitoring.domain;
 
+import dev.whisker.core.monitoring.infrastructure.files.FileSystemAdapter;
 import jakarta.annotation.PreDestroy;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
 @Slf4j
 @Data
-@NoArgsConstructor
+@RequiredArgsConstructor
 @Component("projectFileWatcher")
 public class FileWatcher {
-
-    private static final String DEFAULT_WHISKER_IGNORE = """
-            # Dependencies
-            node_modules/
-            vendor/
-            .venv/
-            venv/
-            __pycache__/
-
-            # Git
-            .git/
-
-            # IDEs
-            .idea/
-            .vscode/
-            .settings/
-
-            # Java
-            target/
-            .gradle/
-            build/
-            out/
-
-            # Flutter / Dart
-            .dart_tool/
-            .flutter-plugins
-            .flutter-plugins-dependencies
-
-            # Front-end
-            .next/
-            dist/
-            coverage/
-
-            # Logs
-            *.log
-
-            # Lock files
-            package-lock.json
-            yarn.lock
-            pnpm-lock.yaml
-            pubspec.lock
-
-            # Binaries
-            *.exe
-            *.dll
-            *.so
-            *.dylib
-            *.jar
-            *.war
-
-            # System
-            .DS_Store
-            Thumbs.db
-            """;
 
     private boolean running;
     private WatchService watcher;
     private Path workdir;
 
-    private final List<PathMatcher> matchers = new ArrayList<>();
     private final Map<Path, Long> pendingChanges = new ConcurrentHashMap<>();
+    private final FileSystemAdapter fileSystemAdapter;
 
     public void start(Path workdir) throws IOException {
 
@@ -92,12 +36,8 @@ public class FileWatcher {
 
         this.workdir = workdir.toAbsolutePath();
 
-        ensureWhiskerIgnoreExists();
-        loadWhiskerIgnore();
-
         this.watcher = FileSystems.getDefault().newWatchService();
-
-        registerAll(this.workdir);
+        fileSystemAdapter.setup(this.workdir);
 
         running = true;
 
@@ -155,7 +95,7 @@ public class FileWatcher {
                     watchedDirectory.resolve(relativePath);
 
 
-            if (shouldIgnore(fullPath)) {
+            if (fileSystemAdapter.shouldIgnore(fullPath)) {
                 continue;
             }
 
@@ -169,7 +109,7 @@ public class FileWatcher {
             if (event.kind() == ENTRY_CREATE
                     && Files.isDirectory(fullPath)) {
 
-                registerAll(fullPath);
+                fileSystemAdapter.registerDirectory(fullPath);
             }
         }
 
@@ -178,110 +118,6 @@ public class FileWatcher {
                     "[WATCHER] Directory no longer accessible: {}",
                     watchedDirectory
             );
-        }
-    }
-
-    private void ensureWhiskerIgnoreExists() throws IOException {
-
-        Path whiskerIgnore = workdir.resolve(".whiskerignore");
-
-        if (Files.exists(whiskerIgnore)) {
-            return;
-        }
-
-        Files.writeString(
-                whiskerIgnore,
-                DEFAULT_WHISKER_IGNORE,
-                StandardOpenOption.CREATE
-        );
-
-        log.info("[WATCHER] Created .whiskerignore");
-    }
-
-    private void loadWhiskerIgnore() throws IOException {
-
-        matchers.clear();
-
-        Path whiskerIgnore = workdir.resolve(".whiskerignore");
-
-        if (!Files.exists(whiskerIgnore)) {
-            return;
-        }
-
-        List<String> lines = Files.readAllLines(whiskerIgnore);
-
-        for (String line : lines) {
-
-            line = line.trim();
-
-            if (line.isBlank() || line.startsWith("#")) {
-                continue;
-            }
-
-            if (line.endsWith("/")) {
-                line += "**";
-            }
-
-            matchers.add(
-                    FileSystems.getDefault()
-                            .getPathMatcher("glob:" + line)
-            );
-        }
-    }
-
-    private boolean shouldIgnore(Path path) {
-
-        Path relative;
-
-        String fileName = path.getFileName().toString();
-        boolean isIgnorable = fileName.endsWith("~") || fileName.endsWith(".tmp") || fileName.endsWith(".temp");
-
-        if (isIgnorable) {
-            return true;
-        }
-
-        try {
-            relative = workdir.relativize(path);
-        } catch (Exception e) {
-            return false;
-        }
-
-        return matchers.stream()
-                .anyMatch(matcher -> matcher.matches(relative));
-    }
-
-    private void register(Path dir) throws IOException {
-
-        if (shouldIgnore(dir)) {
-            return;
-        }
-
-        dir.register(
-                watcher,
-                ENTRY_CREATE,
-                ENTRY_DELETE,
-                ENTRY_MODIFY
-        );
-
-        log.debug("[WATCHER] Registered {}", dir);
-    }
-
-    private void registerAll(Path root) throws IOException {
-        try (Stream<Path> paths = Files.walk(root)) {
-
-            paths.filter(Files::isDirectory)
-                    .filter(path -> !shouldIgnore(path))
-                    .forEach(path -> {
-                        try {
-                            register(path);
-                        } catch (IOException e) {
-                            log.error(
-                                    "[WATCHER] Failed to register {}",
-                                    path,
-                                    e
-                            );
-                        }
-                    });
         }
     }
 
