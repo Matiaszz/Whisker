@@ -1,4 +1,4 @@
-package dev.whisker.core.analysis.domain;
+package dev.whisker.core.analysis.infrastructure;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
