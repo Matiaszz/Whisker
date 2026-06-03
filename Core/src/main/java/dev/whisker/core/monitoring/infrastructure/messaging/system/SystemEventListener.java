@@ -31,7 +31,6 @@ public class SystemEventListener {
             );
 
         try {
-
             String rawSource = event.source().trim();
             Source source = propertySourceResolver.resolve(rawSource);
 

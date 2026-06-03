@@ -5,7 +5,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import dev.whisker.cli.domain.WhiskerEvent;
+import dev.whisker.cli.shared.infrastructure.messaging.BaseWhiskerEvent;
+import dev.whisker.cli.system.domain.SystemEvent;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;
@@ -13,7 +14,10 @@ import picocli.CommandLine.Help.Ansi;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.Callable;
+
+import static dev.whisker.cli.ascii.arts.ASCIICat.*;
 
 @Command(name = "whisker", mixinStandardHelpOptions = true, version = "whisker 1.0",
         description = "Whisker Code Analysis CLI",
@@ -28,7 +32,7 @@ public class Main implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        System.out.println(Ansi.ON.string("@|bold,yellow " + getBanner() + "|@"));
+        System.out.println(Ansi.ON.string("@|bold,yellow " + whiskerBannerAscii() + "|@"));
         CommandLine.usage(this, System.out);
         return 0;
     }
@@ -36,72 +40,29 @@ public class Main implements Callable<Integer> {
     @Command(name = "start", description = "Starts code analysis in the current directory")
     static class StartCommand implements Callable<Integer> {
 
-        private static final String EXCHANGE_NAME = "system.exchange";
-        private static final String ROUTING_KEY = "system.started";
+        private final SystemEvent systemEvent = new SystemEvent();
 
         @Override
         public Integer call() throws Exception {
-            String currentPath = Paths.get(".").toAbsolutePath().normalize().toString();
-            
-            System.out.println(Ansi.ON.string("@|yellow " + getWakingCat() + "|@"));
-            System.out.println(Ansi.ON.string("@|yellow 🐱 Whisker is waking up...|@"));
-            System.out.println(Ansi.ON.string("@|blue Path:|@ " + currentPath));
+            String path = ".";
+            boolean started = systemEvent.start(path);
 
-            WhiskerEvent event = WhiskerEvent.builder()
-                    .eventType("system.start")
-                    .source("whisker-cli")
-                    .payload(Map.of("path", currentPath))
-                    .build();
+            Scanner scanner = new Scanner(System.in);
+            boolean running = true;
 
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModule(new JavaTimeModule());
-            String jsonEvent = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(event);
+            while (running && started) {
+                System.out.print(Ansi.ON.string("@|yellow 🐱  Whisker >|@"));
 
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost("localhost"); // Em um cenário real, isso poderia ser configurável
-            
-            // Tenta desativar logs do SLF4J se possível ou apenas prossegue
-            java.util.logging.Logger.getLogger("com.rabbitmq.client").setLevel(java.util.logging.Level.OFF);
+                String command = scanner.nextLine();
 
-            try (Connection connection = factory.newConnection();
-                 Channel channel = connection.createChannel()) {
-
-                channel.exchangeDeclare(EXCHANGE_NAME, "topic", true);
-
-                channel.basicPublish(EXCHANGE_NAME, ROUTING_KEY, null, jsonEvent.getBytes(StandardCharsets.UTF_8));
-                
-                System.out.println(Ansi.ON.string("@|bold,green ✅ Whisker is ready!|@"));
-                System.out.println(Ansi.ON.string("@|faint " + jsonEvent + "|@"));
-            } catch (Exception e) {
-                System.err.println(Ansi.ON.string("@|bold,red ❌ Error connecting to RabbitMQ:|@ " + e.getMessage()));
-                return 1;
+                switch (command) {
+                    case "quit":
+                        systemEvent.stop();
+                        running = false;
+                }
             }
 
             return 0;
         }
-
-        private static String getWakingCat() {
-            return """
-                    (:`--..___...-''``-._             |`._
-                      ```--...--.      . `-..__      .`/ _\\ \s
-                                `\\     '       ```--`.    />
-                                : :   :               `:`-'
-                                 `.:.  `.._--...___     ``--...__     \s
-                                    ``--..,)       ```----....__,)
-                """;
-        }
-    }
-
-    private static String getBanner() {
-        return """
-                   __..--''``---....___   _..._    __
-         /// //_.-'    .-/";  `        ``<._  ``.''_ `. / // /
-        ///_.-' _..--.'_    \\\\                  `( ) ) // //
-        / (_..-' // (<  _   ;_..__               ; `' / ///
-         / // // / / `-._,_)' // / ``--...____..-' /// / //
-        
-                          W H I S K E R
-                      Code Analysis Platform
-             \s""";
     }
 }
