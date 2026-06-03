@@ -1,4 +1,4 @@
-package dev.whisker.core.shared.infrastructure.messaging;
+package dev.whisker.core.shared.infrastructure.messaging.rabbit;
 
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
