@@ -26,6 +26,7 @@ public class SystemEvent {
 
         EventSender<Map<String, String>> sender = new EventSender<>(
                 event,
+                "system.exchange",
                 "@|bold,green ✅ Whisker is ready!|@",
                 this.debug);
         return sender.send();
@@ -44,6 +45,7 @@ public class SystemEvent {
 
         EventSender<Void> sender = new EventSender<>(
                 event,
+                "system.exchange",
                 "@|bold,green 💤 Whisker is sleeping!|@",
                 this.debug);
         return sender.send();

@@ -10,9 +10,6 @@ import picocli.CommandLine;
 
 import java.nio.charset.StandardCharsets;
 
-import static dev.whisker.cli.shared.infrastructure.messaging.RabbitConstants.EXCHANGE_NAME;
-import static dev.whisker.cli.shared.infrastructure.messaging.RabbitConstants.ROUTING_KEY;
-
 public class EventSender<T> {
     private final ObjectMapper mapper = new ObjectMapper();
     private final ConnectionFactory factory = new ConnectionFactory();
@@ -20,11 +17,16 @@ public class EventSender<T> {
     private String successMessage;
     private boolean debug = false;
     private BaseWhiskerEvent<T> event;
+    private String routingKey;
+    private String exchange;
 
-    public EventSender(BaseWhiskerEvent<T> event, String message, boolean debug){
+    public EventSender(BaseWhiskerEvent<T> event, String exchange, String message, boolean debug){
         this.successMessage = message;
         this.debug = debug;
         this.event = event;
+        routingKey = event.getEventType();
+        this.exchange = exchange;
+
     }
 
     public EventSender(BaseWhiskerEvent<T> event, String message){
@@ -46,9 +48,9 @@ public class EventSender<T> {
         try (Connection connection = factory.newConnection();
              Channel channel = connection.createChannel()) {
 
-            channel.exchangeDeclare(EXCHANGE_NAME, "topic", true);
+            channel.exchangeDeclare(exchange, "topic", true);
 
-            channel.basicPublish(EXCHANGE_NAME, ROUTING_KEY, null, jsonEvent.getBytes(StandardCharsets.UTF_8));
+            channel.basicPublish(exchange, routingKey, null, jsonEvent.getBytes(StandardCharsets.UTF_8));
 
             System.out.println(CommandLine.Help.Ansi.ON.string(this.successMessage));
             if (debug){

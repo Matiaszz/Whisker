@@ -10,6 +10,7 @@ public class PropertySourceResolver implements SourceResolver {
     private final String cliSourceName;
     private final String desktopSourceName;
 
+
     @Override
     public void validate(String source, Map<String, Source> sourceMap) throws IllegalArgumentException{
         if (!sourceMap.containsKey(source)){

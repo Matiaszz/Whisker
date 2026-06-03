@@ -26,7 +26,6 @@ public record BaseWhiskerEvent<T>(
             String json,
             Class<T> payloadType
     ) throws JsonProcessingException {
-
         return MAPPER.readValue(
                 json,
                 MAPPER.getTypeFactory()
