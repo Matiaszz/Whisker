@@ -1,5 +1,6 @@
-package dev.whisker.core.shared.infrastructure.messaging;
+package dev.whisker.core.shared.infrastructure.messaging.rabbit;
 
+import dev.whisker.core.shared.infrastructure.messaging.BaseWhiskerEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
