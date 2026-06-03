@@ -1,8 +1,6 @@
 package dev.whisker.core.monitoring.infrastructure.files;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -17,22 +15,32 @@ import static java.nio.file.StandardWatchEventKinds.*;
 
 @Slf4j
 @Component
-@Data
+@Getter
 @RequiredArgsConstructor
 @AllArgsConstructor
 public class FileSystemAdapter {
     private Path workdir;
     private final List<PathMatcher> matchers = new ArrayList<>();
-    private final WatchService watcher;
+    private WatchService watcher;
+    private boolean setup = true;
+    private boolean initialized = false;
 
     public void setup(Path workdir) throws IOException {
+        this.workdir = workdir;
+        this.watcher = FileSystems.getDefault().newWatchService();
         this.ensureWhiskerIgnoreExists();
         this.loadWhiskerIgnore();
         this.registerDirectory(workdir);
-        this.workdir = workdir;
+        this.setup = false;
+        this.initialized = true;
     }
 
     public void registerDirectory(Path root) throws IOException {
+        if (!isSetup() && !isInitialized()){
+            throw new IllegalStateException(
+                    "FileSystemAdapter must be initialized before registering directories"
+            );
+        }
         try (Stream<Path> paths = Files.walk(root)) {
 
             paths.filter(Files::isDirectory)
@@ -49,22 +57,6 @@ public class FileSystemAdapter {
                         }
                     });
         }
-    }
-
-    private void register(Path dir) throws IOException {
-
-        if (shouldIgnore(dir)) {
-            return;
-        }
-
-        dir.register(
-                watcher,
-                ENTRY_CREATE,
-                ENTRY_DELETE,
-                ENTRY_MODIFY
-        );
-
-        log.debug("[WATCHER] Registered {}", dir);
     }
 
     public boolean shouldIgnore(Path path) {
@@ -85,6 +77,22 @@ public class FileSystemAdapter {
 
         return matchers.stream()
                 .anyMatch(matcher -> matcher.matches(relative));
+    }
+
+    private void register(Path dir) throws IOException {
+
+        if (shouldIgnore(dir)) {
+            return;
+        }
+
+        dir.register(
+                watcher,
+                ENTRY_CREATE,
+                ENTRY_DELETE,
+                ENTRY_MODIFY
+        );
+
+        log.debug("[WATCHER] Registered {}", dir);
     }
 
     private void ensureWhiskerIgnoreExists() throws IOException {
