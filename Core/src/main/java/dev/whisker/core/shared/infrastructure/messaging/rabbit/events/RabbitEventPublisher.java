@@ -1,6 +1,5 @@
-package dev.whisker.core.shared.infrastructure.messaging.rabbit;
+package dev.whisker.core.shared.infrastructure.messaging.rabbit.events;
 
-import dev.whisker.core.shared.infrastructure.messaging.BaseWhiskerEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -13,10 +12,10 @@ public class RabbitEventPublisher {
 
     private final RabbitTemplate rabbitTemplate;
 
-    public void publish(String exchange, String routingKey, BaseWhiskerEvent<?> event) {
+    public void publish(RabbitReceiverTemplate<?> event) {
         try {
-            log.info("[MESSAGING] Publishing event: {}", event.eventType());
-            rabbitTemplate.convertAndSend(exchange, routingKey, event);
+            log.info("[MESSAGING] Publishing event: {}", event.getFullType());
+            rabbitTemplate.convertAndSend(event.getExchange(), event.getRoutingKey(), event);
         } catch (Exception e) {
             log.error("[MESSAGING] Error on event publishing: ", e);
         }

@@ -1,16 +1,21 @@
 package dev.whisker.core.monitoring.domain;
 
 import dev.whisker.core.monitoring.infrastructure.files.FileSystemAdapter;
+import dev.whisker.core.shared.domain.system.SystemEvent;
+import dev.whisker.core.shared.domain.system.SystemEventCodes;
+import dev.whisker.core.shared.domain.system.exceptions.DriveRootMonitoringException;
+import dev.whisker.core.shared.infrastructure.messaging.rabbit.events.RabbitEventPublisher;
+import dev.whisker.core.shared.infrastructure.messaging.rabbit.events.RabbitReceiverTemplate;
 import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.nio.file.StandardWatchEventKinds.*;
@@ -18,23 +23,36 @@ import static java.nio.file.StandardWatchEventKinds.*;
 @Slf4j
 @Data
 @RequiredArgsConstructor
-@Component("projectFileWatcher")
+@Service("projectFileWatcher")
 public class FileWatcher {
 
     private boolean running;
     private WatchService watcher;
     private Path workdir;
+    private final RabbitEventPublisher publisher;
 
     private final Map<Path, Long> pendingChanges = new ConcurrentHashMap<>();
     private final FileSystemAdapter fileSystemAdapter;
 
-    public void start(Path workdir) throws IOException {
+    public void start(Path workdir) throws IOException, DriveRootMonitoringException, InterruptedException {
         if (running) {
             log.warn("[WATCHER] Already running");
+            SystemEvent error = SystemEvent.ERROR;
+            String code = SystemEventCodes.ALREADY_RUNNING.getFullType();
+
+            RabbitReceiverTemplate<Void> event = new RabbitReceiverTemplate<>(code, error, null);
+            publisher.publish(event);
+            Thread.sleep(1500);
             return;
         }
 
         this.workdir = workdir.toAbsolutePath();
+        if (workdir.getParent() == null) {
+            log.error("[WATCHER] Workdir has not been set because parent is null");
+            throw new DriveRootMonitoringException(
+                    "Cannot monitor root"
+            );
+        }
         fileSystemAdapter.setup(this.workdir);
 
         this.watcher = fileSystemAdapter.getWatcher();

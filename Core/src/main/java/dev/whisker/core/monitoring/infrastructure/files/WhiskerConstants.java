@@ -12,10 +12,11 @@ public class WhiskerConstants {
             # Git
             .git/
 
-            # IDEs
+            # IDEs & Tools
             .idea/
             .vscode/
             .settings/
+            .wakatime/
 
             # Java
             target/
@@ -33,8 +34,9 @@ public class WhiskerConstants {
             dist/
             coverage/
 
-            # Logs
+            # Logs & Traces
             *.log
+            *.etl
 
             # Lock files
             package-lock.json
@@ -42,16 +44,33 @@ public class WhiskerConstants {
             pnpm-lock.yaml
             pubspec.lock
 
-            # Binaries
+            # Binaries & Virtual Disks
             *.exe
             *.dll
             *.so
             *.dylib
             *.jar
             *.war
+            *.vhdx
 
-            # System
+            # System & AppData
             .DS_Store
             Thumbs.db
+            AppData/
+            Local/
+            Roaming/
+            LocalLow/
+
+            # Temp & Caches
+            Temp/
+            tmp/
+            *.tmp
+            *.temp
+
+            # Local Databases & Journals
+            *-journal
+            *.vscdb
+            *.bdb
+            *.leveldb/
             """;
 }

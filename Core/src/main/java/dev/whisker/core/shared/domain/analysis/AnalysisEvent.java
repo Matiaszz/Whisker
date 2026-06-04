@@ -6,12 +6,12 @@ public enum AnalysisEvent implements EventType {
     REQUESTED, STARTED, FINISHED, FAILED;
 
     @Override
-    public String getModel() {
-        return "analysis";
+    public String getExchange() {
+        return "analysis.exchange";
     }
 
     @Override
-    public String getAction() {
+    public String getRoutingKey() {
         return name().toLowerCase();
     }
 }
