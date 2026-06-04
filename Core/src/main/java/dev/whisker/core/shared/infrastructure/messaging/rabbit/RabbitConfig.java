@@ -20,41 +20,58 @@ public class RabbitConfig {
         return new Jackson2JsonMessageConverter();
     }
 
-    // Pega todos os métodos que implementam RabbitConfigTemplate no projeto
     @Bean
     public Declarables dynamicDeclarables(List<RabbitConfigTemplate> templates) {
-        // Declarable = em vez de fazer bean por bean pra declarar uma nova fila e etc,
-        // ele já upa todos de uma vez
+
         List<Declarable> declarables = new ArrayList<>();
 
         for (RabbitConfigTemplate template : templates) {
-            TopicExchange exchange = new TopicExchange(template.getExchangeName());
-            TopicExchange dlxExchange = new TopicExchange(template.getExchangeName() + ".dlx");
+
+            String exchangeName = template.getExchangeName();
+            String dlxName = exchangeName + ".dlx";
+
+            TopicExchange exchange = new TopicExchange(exchangeName);
+            TopicExchange dlxExchange = new TopicExchange(dlxName);
+
             declarables.add(exchange);
             declarables.add(dlxExchange);
 
             for (EventType event : template.getEvents()) {
-                String routingKey = event.getFullType();
-                String queueName = routingKey + ".queue";
-                String dlqName = routingKey + ".dlq";
-                String dlxName = template.getExchangeName() + ".dlx";
 
-                // Tratamento de erros runtime, estudar melhor sobre dlq
+                String routingKey = event.getRoutingKey();
+
+                String queueName = event.getFullType() + ".queue";
+                String dlqName = event.getFullType() + ".dlq";
+
                 Map<String, Object> args = new HashMap<>();
                 args.put("x-dead-letter-exchange", dlxName);
                 args.put("x-dead-letter-routing-key", dlqName);
 
-                Queue queue = new Queue(queueName, true, false, false, args);
-                Binding binding = BindingBuilder.bind(queue)
+                Queue queue = new Queue(
+                        queueName,
+                        true,
+                        false,
+                        false,
+                        args
+                );
+
+                Binding binding = BindingBuilder
+                        .bind(queue)
                         .to(exchange)
                         .with(routingKey);
 
+                Queue dlq = new Queue(
+                        dlqName,
+                        true
+                );
+
+                Binding dlqBinding = BindingBuilder
+                        .bind(dlq)
+                        .to(dlxExchange)
+                        .with(dlqName);
+
                 declarables.add(queue);
                 declarables.add(binding);
-
-                Queue dlq = new Queue(dlqName, true, false, false);
-                Binding dlqBinding = BindingBuilder.bind(dlq).to(dlxExchange).with(dlqName);
-
                 declarables.add(dlq);
                 declarables.add(dlqBinding);
             }

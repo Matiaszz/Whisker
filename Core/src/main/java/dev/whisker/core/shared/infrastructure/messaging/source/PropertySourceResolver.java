@@ -1,14 +1,18 @@
 package dev.whisker.core.shared.infrastructure.messaging.source;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 @Component
+@NoArgsConstructor
+@Getter
 public class PropertySourceResolver implements SourceResolver {
-    private final String coreSourceName;
-    private final String cliSourceName;
-    private final String desktopSourceName;
+    public static final String CORE_SOURCE_NAME = "whisker-core";
+    public static final String CLI_SOURCE_NAME = "whisker-cli";
+    public static final String DESKTOP_SOURCE_NAME = "whisker-desktop";
 
 
     @Override
@@ -28,16 +32,8 @@ public class PropertySourceResolver implements SourceResolver {
 
     private Map<String, Source> getValidSources(){
         return Map.of(
-                coreSourceName, Source.CORE,
-                cliSourceName, Source.CLI,
-                desktopSourceName, Source.DESKTOP);
+                CORE_SOURCE_NAME, Source.CORE,
+                CLI_SOURCE_NAME, Source.CLI,
+                DESKTOP_SOURCE_NAME, Source.DESKTOP);
     }
-
-    public PropertySourceResolver() {
-        this.coreSourceName = "whisker-core";
-        this.cliSourceName = "whisker-cli";
-        this.desktopSourceName = "whisker-desktop";
-    }
-
-
 }

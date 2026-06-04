@@ -4,8 +4,7 @@ public interface EventType {
     String getExchange();
     String getRoutingKey();
 
-    default String getFullType(){
+    default String getFullType() {
         return getExchange() + "." + getRoutingKey();
     }
-
 }

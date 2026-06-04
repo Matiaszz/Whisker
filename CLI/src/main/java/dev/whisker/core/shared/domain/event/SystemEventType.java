@@ -1,8 +1,6 @@
-package dev.whisker.core.shared.domain.system;
+package dev.whisker.core.shared.domain.event;
 
-import dev.whisker.core.shared.domain.event.EventType;
-
-public enum SystemEvent implements EventType {
+public enum SystemEventType implements EventType {
     STARTED, STOPPED, NOTIFICATION, ERROR;
 
     @Override
@@ -12,6 +10,6 @@ public enum SystemEvent implements EventType {
 
     @Override
     public String getRoutingKey() {
-        return name().toLowerCase();
+        return this.name().toLowerCase();
     }
 }

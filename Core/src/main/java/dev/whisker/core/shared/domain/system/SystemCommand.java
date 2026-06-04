@@ -2,12 +2,12 @@ package dev.whisker.core.shared.domain.system;
 
 import dev.whisker.core.shared.domain.event.EventType;
 
-public enum SystemEvent implements EventType {
-    STARTED, STOPPED, NOTIFICATION, ERROR;
+public enum SystemCommand implements EventType {
+    START, STOP;
 
     @Override
     public String getExchange() {
-        return "system.event";
+        return "system.command";
     }
 
     @Override
